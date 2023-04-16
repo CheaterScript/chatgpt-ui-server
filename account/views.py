@@ -1,9 +1,11 @@
+import os
 from rest_framework.response import Response
 from rest_framework import status
 from dj_rest_auth.registration.views import RegisterView
 from chat.models import Setting
 from allauth.account import app_settings as allauth_account_settings
 
+CODE = os.getenv('CODE')
 
 class RegistrationView(RegisterView):
     def create(self, request, *args, **kwargs):
@@ -11,6 +13,9 @@ class RegistrationView(RegisterView):
             open_registration = Setting.objects.get(name='open_registration').value == 'True'
         except Setting.DoesNotExist:
             open_registration = True
+
+        if CODE is not None and request.POST.get("code") is not CODE:
+            return Response({'detail': '邀请码不正确，请联系管理员。'}, status=status.HTTP_403_FORBIDDEN)
 
         if open_registration is False:
             return Response({'detail': 'Registration is not yet open.'}, status=status.HTTP_403_FORBIDDEN)
